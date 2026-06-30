@@ -248,7 +248,7 @@
                     <div class="flex-1 min-w-0">
                         <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Candidate Session</span>
                         <p class="font-extrabold text-slate-800 text-xs truncate uppercase" id="candidate-name-label">Loading...</p>
-                        <!-- Candidate dynamic database metrics mapped securely -->
+                        <!-- Candidate database metrics mapped securely -->
                         <p class="text-[9px] text-indigo-600 font-bold font-mono tracking-tight truncate" id="candidate-email-label">Loading...</p>
                         <p class="text-[9px] text-slate-500 mt-0.5 font-semibold">Session Date: <span class="font-mono text-slate-700">June 30, 2026</span></p>
                     </div>
@@ -461,9 +461,10 @@
                     </div>
                 </div>
             </div>
+            <!-- REPLACED RETAKE TO PORTAL DIRECT INDEX HOME BUTTON -->
             <div class="bg-slate-100 px-5 py-4 flex justify-center">
-                <button onclick="restartTestSession()" class="bg-[#e94560] hover:bg-[#da3e58] text-white text-xs font-bold px-5 py-2.5 rounded shadow-sm">
-                    Retake Test Panel
+                <button onclick="window.location.href='index.html'" class="bg-[#27ae60] hover:bg-[#219653] text-white text-xs font-bold px-6 py-3 rounded-lg shadow-md transition-all">
+                    Go back to Portal
                 </button>
             </div>
         </div>
@@ -554,12 +555,10 @@
                 
                 window.userId = user.uid;
                 
-                // Retrieve real user details from firestore
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+                // Retrieve real user details from firestore USERS/{userid}
                 let studentName = null;
                 let studentEmail = null;
 
-                // Priority Path: USERS/{userid} document
                 try {
                     const legacyUserDocRef = doc(db, 'USERS', user.uid);
                     const legacyUserSnap = await getDoc(legacyUserDocRef);
@@ -569,25 +568,10 @@
                         studentEmail = data.email !== undefined ? data.email : null;
                     }
                 } catch (legacyError) {
-                    console.warn("Legacy USERS fetch encountered permission or configuration issues. Checking standard sandbox path...", legacyError);
+                    console.warn("USERS fetch encountered permission issues.", legacyError);
                 }
 
-                // Fallback Path conforming to Rule 1: artifacts/{appId}/users/{userId}
-                if (studentName === null && studentEmail === null) {
-                    try {
-                        const standardUserDocRef = doc(db, 'artifacts', appId, 'users', user.uid);
-                        const standardUserSnap = await getDoc(standardUserDocRef);
-                        if (standardUserSnap.exists()) {
-                            const data = standardUserSnap.data();
-                            studentName = data.name !== undefined ? data.name : null;
-                            studentEmail = data.email !== undefined ? data.email : null;
-                        }
-                    } catch (standardError) {
-                        console.error("Standard sandbox user path query failed:", standardError);
-                    }
-                }
-
-                // Format fields to string: Show null string if value is missing/undefined
+                // Format fields to string: Show null string if value is missing/undefined as requested
                 const displayName = studentName !== null ? String(studentName) : 'null';
                 const displayEmail = studentEmail !== null ? String(studentEmail) : 'null';
 
@@ -726,40 +710,69 @@
             });
         }
 
-        // Create or update private USERS/{userid}/ExamInstances/{documentid} record
+        // Check and update dynamic availableExams list in USERS/{userID}
+        async function checkAndAddAvailableExam() {
+            if (!window.userId || !window.firestoreDb) return;
+            
+            toggleSyncBadge(true);
+            try {
+                const userDocRef = window.firestoreDoc(window.firestoreDb, "USERS", window.userId);
+                const userSnap = await window.firestoreGetDoc(userDocRef);
+                
+                let availableExams = [];
+                let existingData = {};
+                
+                if (userSnap.exists()) {
+                    existingData = userSnap.data();
+                    availableExams = existingData.availableExams || [];
+                }
+                
+                // Add the current examId to array if it is not present
+                if (!availableExams.includes(examId)) {
+                    availableExams.push(examId);
+                    await window.firestoreSetDoc(userDocRef, {
+                        ...existingData,
+                        availableExams: availableExams
+                    }, { merge: true });
+                    console.log(`Successfully added Exam ID '${examId}' to availableExams array.`);
+                }
+            } catch (err) {
+                console.error("Failed to update availableExams in USERS table:", err);
+            } finally {
+                toggleSyncBadge(false);
+            }
+        }
+
+        // Create or update USERS/{userid}/ExamInstances/{documentid} record matching image_56a030.png specification
         async function createOrUpdateExamInstance(status = 'ongoing', score = 0) {
             if (!window.userId || !window.firestoreDb) return;
 
             toggleSyncBadge(true);
             try {
                 const currentAnsArray = generateAnsArray();
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
-
-                // Strictly structured path complying with Rule 1
-                const instancePath = `/artifacts/${appId}/users/${window.userId}/ExamInstances`;
 
                 if (!activeExamInstanceId) {
-                    // New instance initiation
-                    const instancesCollection = window.firestoreCollection(window.firestoreDb, 'artifacts', appId, 'users', window.userId, 'ExamInstances');
+                    // New instance initiation under USERS/{userId}/ExamInstances
+                    const instancesCollection = window.firestoreCollection(window.firestoreDb, 'USERS', window.userId, 'ExamInstances');
                     const newInstanceDoc = await window.firestoreAddDoc(instancesCollection, {
                         "Exam id": examId,
-                        "examId": examId,
-                        "time": testRemainingSecs,
                         "ansArray": currentAnsArray,
-                        "status": status,
+                        "createdAt": new Date().toISOString(),
+                        "examId": examId,
                         "score": score,
-                        "createdAt": new Date().toISOString()
+                        "status": status,
+                        "time": testRemainingSecs
                     });
                     activeExamInstanceId = newInstanceDoc.id;
                     console.log("Exam instance established on crackcard engine:", activeExamInstanceId);
                 } else {
-                    // Ongoing update triggers
-                    const instanceDocRef = window.firestoreDoc(window.firestoreDb, 'artifacts', appId, 'users', window.userId, 'ExamInstances', activeExamInstanceId);
+                    // Ongoing updates mapping
+                    const instanceDocRef = window.firestoreDoc(window.firestoreDb, 'USERS', window.userId, 'ExamInstances', activeExamInstanceId);
                     await window.firestoreUpdateDoc(instanceDocRef, {
-                        "time": testRemainingSecs,
                         "ansArray": currentAnsArray,
                         "status": status,
-                        "score": score
+                        "score": score,
+                        "time": testRemainingSecs
                     });
                 }
             } catch (err) {
@@ -776,13 +789,11 @@
             showLoadingState(true);
 
             try {
-                const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
                 let testDurationMinutes = 180;
                 let testDisplayName = examId.toUpperCase();
                 let examDocData = null;
 
-                // Rule 1 Public Data Path mapping: artifacts/{appId}/public/data/Exams/{examId}
-                const examDocRef = window.firestoreDoc(window.firestoreDb, 'artifacts', appId, 'public', 'data', 'Exams', examId);
+                const examDocRef = window.firestoreDoc(window.firestoreDb, 'Exams', examId);
                 
                 try {
                     const examSnapshot = await window.firestoreGetDoc(examDocRef);
@@ -791,19 +802,6 @@
                     }
                 } catch (e) {
                     console.warn("Primary path check fallback...");
-                }
-
-                // Sandbox fallback check
-                if (!examDocData) {
-                    try {
-                        const legacyRef = window.firestoreDoc(window.firestoreDb, "Exams", examId);
-                        const legacySnapshot = await window.firestoreGetDoc(legacyRef);
-                        if (legacySnapshot.exists()) {
-                            examDocData = legacySnapshot.data();
-                        }
-                    } catch (err) {
-                        console.error("All exam metadata pathways exhausted.");
-                    }
                 }
 
                 if (examDocData) {
@@ -821,25 +819,13 @@
                 // Fetch target exam questions subcollection
                 let loadedQuestions = [];
                 try {
-                    const subcollectionRef = window.firestoreCollection(window.firestoreDb, 'artifacts', appId, 'public', 'data', 'Exams', examId, 'Questions');
+                    const subcollectionRef = window.firestoreCollection(window.firestoreDb, 'Exams', examId, 'Questions');
                     const snapshot = await window.firestoreGetDocs(subcollectionRef);
                     snapshot.forEach((doc) => {
                         loadedQuestions.push({ docId: doc.id, ...doc.data() });
                     });
                 } catch (e) {
-                    console.warn("Attempting Questions legacy nested pathway...");
-                }
-
-                if (loadedQuestions.length === 0) {
-                    try {
-                        const legacySubRef = window.firestoreCollection(window.firestoreDb, "Exams", examId, "Questions");
-                        const legacySnapshot = await window.firestoreGetDocs(legacySubRef);
-                        legacySnapshot.forEach((doc) => {
-                            loadedQuestions.push({ docId: doc.id, ...doc.data() });
-                        });
-                    } catch (err) {
-                        console.error("Critical: Questions collection is completely inaccessible.");
-                    }
+                    console.warn("Attempting Questions subcollection pathway error:", e);
                 }
 
                 // Sort payload using key "index" property values
@@ -880,13 +866,19 @@
 
         // Start active exam sequence from gatekeeper modal
         async function startActiveExamNow() {
+            // Check USERS/{userID} for examId array membership, then create dynamic ExamInstance
+            if (window.userId && window.firestoreDb) {
+                // Ensure array contains examId first
+                await checkAndAddAvailableExam();
+                
+                // Create instance inside USERS/{userId}/ExamInstances
+                if (questionsDatabase.length > 0) {
+                    await createOrUpdateExamInstance('ongoing', 0);
+                }
+            }
+
             // Hide gatekeeper screen
             document.getElementById('instructions-gatekeeper-modal').classList.add('hidden');
-
-            // Establish progress trace record triggers
-            if (questionsDatabase.length > 0) {
-                await createOrUpdateExamInstance('ongoing', 0);
-            }
 
             // Sync timer clock
             initiateTestTimer();
@@ -1247,29 +1239,13 @@
             document.getElementById('report-correct-cnt').innerText = `${scoreCorrectCount} (+${totalGainedCorrectMarks} Marks)`;
             document.getElementById('report-incorrect-cnt').innerText = `${scoreWrongCount} (-${totalPenaltiesSubtracted} Marks)`;
 
-            // Sync final status to path
+            // Sync final status to path (status updated to 'completed')
             await createOrUpdateExamInstance('completed', totalScore);
 
             // Clear temporary local storage responses caching
             localStorage.removeItem(`nta_responses_${examId}`);
 
             document.getElementById('test-grade-report-modal').classList.remove('hidden');
-        }
-
-        // Reset session state
-        function restartTestSession() {
-            document.getElementById('test-grade-report-modal').classList.add('hidden');
-            
-            candidateSessionResponses = {};
-            currentQuestionIdx = 0;
-            activeExamInstanceId = null; 
-
-            // Reveal Gatekeeper confirmation modal again to fetch metadata cleanly
-            document.getElementById('instructions-gatekeeper-modal').classList.remove('hidden');
-            document.getElementById('gatekeeper-loading').classList.remove('hidden');
-            document.getElementById('gatekeeper-ready').classList.add('hidden');
-            
-            syncPrimaryExamPayload();
         }
 
         // Custom notification alerts helper
