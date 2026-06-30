@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrackCard - Student Workspace Dashboard</title>
+    <!-- Tailwind CSS for high-quality layouts -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for symbols/icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    
+    <style>
+        body {
+            font-family: 'Inter', 'Roboto', sans-serif;
+            background-color: #f1f5f9;
+        }
+        /* Custom smooth scrollbars */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #f1f5f9;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #cbd5e1;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #94a3b8;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col overflow-x-hidden">
+
+    <!-- DASHBOARD HEADER -->
+    <header class="bg-[#0f3460] text-white px-6 py-4 flex flex-col sm:flex-row justify-between items-center shadow-lg gap-4 shrink-0 z-40">
+        <div class="flex items-center space-x-3.5">
+            <div class="bg-white p-1.5 rounded-lg shadow-sm">
+                <span class="text-[#0f3460] font-extrabold text-base px-2.5 tracking-wider">CRACKCARD</span>
+            </div>
+            <div class="border-l border-slate-500 pl-3.5">
+                <h1 class="text-xs text-slate-300 font-bold uppercase tracking-wider">Student Dashboard</h1>
+                <p class="text-sm font-extrabold text-white">CrackCard Portal Console</p>
+            </div>
+        </div>
+
+        <!-- FAST GATEWAY NAVIGATION -->
+        <div class="flex items-center space-x-3">
+            <!-- Sync Indicator Badge -->
+            <div id="sync-badge" class="hidden flex items-center space-x-1.5 bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-2.5 py-1.5 rounded-md">
+                <i class="fas fa-sync animate-spin text-[8px]"></i>
+                <span>SYNCED</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY SECTION -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 space-y-6">
+
+        <!-- PROFILE & LIVE STATS BOARD OVERVIEW -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            
+            <!-- PROFILE MANAGEMENT CARD -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-center min-h-[140px]">
+                <div class="flex items-center space-x-4">
+                    <!-- Profile Avatar -->
+                    <div class="w-16 h-16 bg-gradient-to-tr from-[#0f3460] to-indigo-800 rounded-2xl text-white flex flex-col items-center justify-center font-bold shadow-md">
+                        <i class="fas fa-user-graduate text-2xl"></i>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Student profile</span>
+                        <div class="flex items-center space-x-2 mt-1">
+                            <h2 id="profile-display-name" class="font-extrabold text-slate-800 text-lg truncate">Loading student...</h2>
+                            
+                            <!-- Inline Edit Input (Hidden by default) -->
+                            <div id="inline-name-edit-container" class="hidden flex items-center space-x-1.5">
+                                <input type="text" id="name-input" placeholder="Enter name" class="bg-slate-100 text-slate-800 text-xs px-2.5 py-1 rounded border border-slate-200 focus:ring-1 focus:ring-indigo-500 focus:outline-none font-semibold w-28 sm:w-36" />
+                                <button onclick="handleSaveProfileName()" class="bg-emerald-600 hover:bg-emerald-700 text-white p-1 rounded transition-colors text-[10px] w-6 h-6 flex items-center justify-center shadow-sm" title="Save">
+                                    <i class="fas fa-check"></i>
+                                </button>
+                                <button onclick="toggleInlineEdit(false)" class="bg-rose-600 hover:bg-rose-700 text-white p-1 rounded transition-colors text-[10px] w-6 h-6 flex items-center justify-center shadow-sm" title="Cancel">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+
+                            <!-- Edit Icon Button -->
+                            <button id="edit-name-btn" onclick="toggleInlineEdit(true)" class="text-slate-400 hover:text-indigo-600 p-1 transition-colors" title="Edit Profile Name">
+                                <i class="fas fa-pen text-xs"></i>
+                            </button>
+                        </div>
+                        <span id="profile-uid-label" class="text-[9px] text-emerald-600 font-mono tracking-wider font-bold truncate block mt-1">UID: Connecting...</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KEY PERFORMANCE METRICS (2/3 Grid width) -->
+            <div class="lg:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-5 flex flex-col justify-between">
+                <div>
+                    <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <i class="fas fa-chart-line text-[#0f3460]"></i>
+                        <span>Cumulative Performance Analytics</span>
+                    </h3>
+                    
+                    <div class="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <!-- Stat card: Attempts -->
+                        <div class="bg-slate-50 p-4 rounded-xl border border-slate-100 text-center">
+                            <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Total Attempts</span>
+                            <span id="stat-total-attempts" class="text-xl font-black text-slate-800 block mt-1">0</span>
+                        </div>
+                        <!-- Stat card: Completed -->
+                        <div class="bg-emerald-50 p-4 rounded-xl border border-emerald-100 text-center">
+                            <span class="text-[9px] text-emerald-600 font-bold uppercase tracking-wider block">Completed</span>
+                            <span id="stat-completed-exams" class="text-xl font-black text-emerald-800 block mt-1">0</span>
+                        </div>
+                        <!-- Stat card: In Progress -->
+                        <div class="bg-amber-50 p-4 rounded-xl border border-amber-100 text-center">
+                            <span class="text-[9px] text-amber-600 font-bold uppercase tracking-wider block">In Progress</span>
+                            <span id="stat-ongoing-exams" class="text-xl font-black text-amber-800 block mt-1">0</span>
+                        </div>
+                        <!-- Stat card: Top Score -->
+                        <div class="bg-indigo-50 p-4 rounded-xl border border-indigo-100 text-center">
+                            <span class="text-[9px] text-indigo-600 font-bold uppercase tracking-wider block">Top Score</span>
+                            <span id="stat-top-score" class="text-xl font-black text-indigo-800 block mt-1">N/A</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="mt-4 pt-4 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between text-xs text-slate-500 gap-2">
+                    <span class="font-medium"><i class="fas fa-info-circle mr-1.5"></i>All data is securely synchronized to your Firestore test instances stream.</span>
+                    <button onclick="handleReloadDashboardData()" class="text-[#0f3460] font-bold hover:underline self-start sm:self-auto"><i class="fas fa-sync-alt mr-1"></i>Refresh Board</button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- SYSTEM NOTIFICATIONS ALERTS BAR -->
+        <div id="toast-banner" class="hidden bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-semibold px-4 py-3 rounded-xl flex items-center justify-between shadow-sm animate-fade-in">
+            <span class="flex items-center gap-2">
+                <i class="fas fa-check-circle text-emerald-500"></i>
+                <span id="toast-message">Database synchronized successfully!</span>
+            </span>
+            <button onclick="hideToastNotification()" class="text-emerald-500 hover:text-emerald-700 font-bold">&times;</button>
+        </div>
+
+        <!-- MAIN SUBSECTIONS GRID -->
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+            <!-- LEFT BOX (4 columns): ASSIGNED EXAMS -->
+            <div class="lg:col-span-4 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-fit">
+                <div class="bg-slate-50 border-b border-slate-200 px-5 py-4">
+                    <h3 class="font-extrabold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                        <i class="fas fa-clipboard-list text-blue-600"></i>
+                        <span>Assigned Exams List</span>
+                    </h3>
+                    <p class="text-[10px] text-slate-400 mt-1 leading-relaxed">Assigned under your student identity array profile <code>availableExams</code>.</p>
+                </div>
+
+                <!-- ASSIGNED EXAMS INNER BODY -->
+                <div id="assigned-exams-container" class="p-5 space-y-3.5">
+                    <!-- LOADING INJECT -->
+                    <div class="flex flex-col items-center justify-center py-10 text-slate-400">
+                        <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mb-3"></div>
+                        <span class="text-xs font-medium">Fetching assigned courses...</span>
+                    </div>
+                </div>
+
+                <!-- SELF-ASSIGN MANUALLY SECTION -->
+                <div class="bg-slate-50 border-t border-slate-200 p-4">
+                    <div class="flex flex-col space-y-2">
+                        <span class="text-[9px] font-bold text-slate-500 uppercase tracking-wider">Assign Custom Exam ID manually</span>
+                        <div class="flex gap-2">
+                            <input type="text" id="manual-exam-id" placeholder="e.g. test" class="flex-1 bg-white text-slate-800 text-xs px-2.5 py-2 rounded-lg border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-600 font-semibold" />
+                            <button onclick="handleManualSelfAssign()" class="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3.5 py-2 rounded-lg shadow transition-colors shrink-0">
+                                Assign
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- RIGHT BOX (8 columns): PREVIOUS EXAM ATTEMPTS HISTORY -->
+            <div class="lg:col-span-8 bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col">
+                <div class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                    <div>
+                        <h3 class="font-extrabold text-slate-800 text-xs uppercase tracking-wider flex items-center gap-2">
+                            <i class="fas fa-history text-indigo-600"></i>
+                            <span>Exam Attempt History</span>
+                        </h3>
+                        <p class="text-[10px] text-slate-400 mt-1">Real-time stream of your performance papers from <code>ExamInstances</code>.</p>
+                    </div>
+                    <!-- Legend badge -->
+                    <span class="bg-slate-100 text-slate-600 border text-[9px] font-bold font-mono px-2.5 py-1 rounded-md max-w-fit">USERS/{userId}/ExamInstances</span>
+                </div>
+
+                <!-- ATTEMPTS TABLE / LIST CONTAINER -->
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left border-collapse">
+                        <thead>
+                            <tr class="border-b border-slate-100 text-[10px] font-black text-slate-400 uppercase tracking-wider bg-slate-50/50">
+                                <th class="py-3 px-5">Exam ID</th>
+                                <th class="py-3 px-4">Status</th>
+                                <th class="py-3 px-4">Time Remaining</th>
+                                <th class="py-3 px-4 text-center">Score achieved</th>
+                                <th class="py-3 px-5 text-right">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody id="attempts-history-list" class="divide-y divide-slate-100 text-xs">
+                            <!-- Populated dynamically via JS -->
+                            <tr>
+                                <td colspan="5" class="py-12 text-center text-slate-400 font-medium">
+                                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-600 mx-auto mb-3"></div>
+                                    Synchronizing workspace with Firestore streams...
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- SYSTEM INFORMATION ALERT DIALOG MODAL -->
+    <div id="custom-alert-panel" class="fixed inset-0 bg-black/60 z-50 flex items-center justify-center hidden p-4 animate-fade-in">
+        <div class="bg-white rounded-xl max-w-md w-full overflow-hidden shadow-2xl">
+            <div class="bg-slate-900 px-5 py-3 text-white flex justify-between items-center">
+                <h3 class="font-bold text-xs uppercase tracking-wide flex items-center gap-1.5">
+                    <i class="fas fa-bell text-amber-400"></i>
+                    <span>System Advisory</span>
+                </h3>
+                <button onclick="closeAlertPanel()" class="text-white hover:text-slate-300 font-bold text-lg">&times;</button>
+            </div>
+            <div class="p-5 text-slate-700 text-xs leading-relaxed" id="custom-alert-body">
+                Alert placeholder body content description.
+            </div>
+            <div class="bg-slate-100 px-5 py-3 flex justify-end">
+                <button onclick="closeAlertPanel()" class="bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold px-4 py-2 rounded-lg transition-colors shadow">
+                    Understood
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- FIREBASE INITIALIZATION MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getFirestore, collection, doc, getDoc, getDocs, onSnapshot, setDoc, updateDoc, query } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+        // Verified active Firebase config provided by customer
+        const firebaseConfig = {
+            apiKey: "AIzaSyCN68QPy4_6xAtytseh1e9ineUdwTlof4o",
+            authDomain: "crackcard-61c53.firebaseapp.com",
+            projectId: "crackcard-61c53",
+            storageBucket: "crackcard-61c53.firebasestorage.app",
+            messagingSenderId: "603880423789",
+            appId: "1:603880423789:web:4f287967731b43ced99a64",
+            measurementId: "G-P762YK7392"
+        };
+
+        // Initialize Firebase instances
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Bind helpers to window object for usage within general browser script
+        window.firestoreDb = db;
+        window.firestoreCollection = collection;
+        window.firestoreDoc = doc;
+        window.firestoreGetDoc = getDoc;
+        window.firestoreGetDocs = getDocs;
+        window.firestoreOnSnapshot = onSnapshot;
+        window.firestoreSetDoc = setDoc;
+        window.firestoreUpdateDoc = updateDoc;
+        window.firestoreQuery = query;
+        window.firebaseAuth = auth;
+
+        // Run persistence authentication sequence on DOM ready
+        async function runPersistenceAuth() {
+            try {
+                // Check if an existing authentication session is cached / restored
+                let user = await new Promise((resolve) => {
+                    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                        unsubscribe();
+                        resolve(currentUser);
+                    });
+                });
+
+                // If not logged in, trigger anonymous login or check canvas custom token
+                if (!user) {
+                    let userCredential;
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            userCredential = await signInWithCustomToken(auth, __initial_auth_token);
+                            console.log("Successfully logged in with system custom token.");
+                        } catch (err) {
+                            console.warn("Custom token invalid, running anonymous fallback login:", err);
+                            userCredential = await signInAnonymously(auth);
+                        }
+                    } else {
+                        userCredential = await signInAnonymously(auth);
+                    }
+                    user = userCredential.user;
+                }
+
+                window.userId = user.uid;
+
+                // Sync UI displays
+                const uidLabel = document.getElementById('profile-uid-label');
+                if (uidLabel) {
+                    uidLabel.innerText = `UID: ${user.uid}`;
+                    uidLabel.title = `Persistent auth identity profile: ${user.uid}`;
+                }
+
+                // Initialize dashboard content and continuous snapshot streams
+                loadDashboardContentStream();
+
+            } catch (err) {
+                console.error("Firebase persistence auth workflow failed completely:", err);
+                showSystemAlert("Authentication Failure", "Could not establish persistent authentication with firestore servers. Verify network configurations or database permission parameters.");
+            }
+        }
+
+        runPersistenceAuth();
+    </script>
+
+    <!-- COMPREHENSIVE DASHBOARD SCRIPTS -->
+    <script>
+        let previousAttemptsData = [];
+        let dashboardSnapshotUnsubscribe = null;
+        let attemptsSnapshotUnsubscribe = null;
+
+        // Toggle inline editing state for Student Name
+        function toggleInlineEdit(show) {
+            const displayName = document.getElementById('profile-display-name');
+            const editContainer = document.getElementById('inline-name-edit-container');
+            const editBtn = document.getElementById('edit-name-btn');
+            const nameInput = document.getElementById('name-input');
+
+            if (show) {
+                displayName.classList.add('hidden');
+                editContainer.classList.remove('hidden');
+                editBtn.classList.add('hidden');
+                nameInput.value = displayName.innerText;
+                nameInput.focus();
+            } else {
+                displayName.classList.remove('hidden');
+                editContainer.classList.add('hidden');
+                editBtn.classList.remove('hidden');
+            }
+        }
+
+        // Toggle visual cloud syncing status indicator
+        function toggleSyncBadge(isVisible) {
+            const badge = document.getElementById('sync-badge');
+            if (badge) {
+                if (isVisible) {
+                    badge.classList.remove('hidden');
+                } else {
+                    badge.classList.add('hidden');
+                }
+            }
+        }
+
+        // Display beautiful in-app green status notification banners
+        function showToastNotification(message) {
+            const toast = document.getElementById('toast-banner');
+            const toastMessage = document.getElementById('toast-message');
+            if (toast && toastMessage) {
+                toastMessage.innerText = message;
+                toast.classList.remove('hidden');
+                
+                // Auto hide after 4.5 seconds
+                setTimeout(() => {
+                    hideToastNotification();
+                }, 4500);
+            }
+        }
+
+        function hideToastNotification() {
+            const toast = document.getElementById('toast-banner');
+            if (toast) toast.classList.add('hidden');
+        }
+
+        // Show generic popup message boxes safely without utilizing native alert() blocks
+        function showSystemAlert(title, message) {
+            const modal = document.getElementById('custom-alert-panel');
+            const body = document.getElementById('custom-alert-body');
+            if (modal && body) {
+                body.innerText = message;
+                modal.classList.remove('hidden');
+            }
+        }
+
+        function closeAlertPanel() {
+            const modal = document.getElementById('custom-alert-panel');
+            if (modal) modal.classList.add('hidden');
+        }
+
+        // Establish live connection streams tracking profile variables and test instances
+        function loadDashboardContentStream() {
+            if (!window.userId || !window.firestoreDb) return;
+
+            toggleSyncBadge(true);
+
+            // 1. Listen in real-time to Profile and Assigned Exams: USERS/{userid}
+            const userDocRef = window.firestoreDoc(window.firestoreDb, "USERS", window.userId);
+
+            if (dashboardSnapshotUnsubscribe) dashboardSnapshotUnsubscribe();
+            
+            dashboardSnapshotUnsubscribe = window.firestoreOnSnapshot(userDocRef, (docSnapshot) => {
+                toggleSyncBadge(true);
+                
+                let displayName = "Student Candidate";
+                let availableExams = [];
+                if (docSnapshot.exists()) {
+                    const data = docSnapshot.data();
+                    if (data.name) {
+                        displayName = data.name;
+                    }
+                    if (data.availableExams && Array.isArray(data.availableExams)) {
+                        availableExams = data.availableExams;
+                    }
+                } else {
+                    // Create basic default profile document if none exists yet
+                    createDefaultUserProfile();
+                }
+
+                // Render student display fields
+                document.getElementById('profile-display-name').innerText = displayName.toUpperCase();
+                document.getElementById('name-input').value = displayName;
+
+                renderAssignedExamsList(availableExams);
+                toggleSyncBadge(false);
+            }, (error) => {
+                console.error("Profile snapshot listener failed:", error);
+                toggleSyncBadge(false);
+            });
+
+            // 2. Listen in real-time to Previous Test Attempts: USERS/{userid}/ExamInstances
+            const instancesColRef = window.firestoreCollection(window.firestoreDb, "USERS", window.userId, "ExamInstances");
+
+            if (attemptsSnapshotUnsubscribe) attemptsSnapshotUnsubscribe();
+
+            attemptsSnapshotUnsubscribe = window.firestoreOnSnapshot(instancesColRef, (colSnapshot) => {
+                toggleSyncBadge(true);
+                let attempts = [];
+
+                colSnapshot.forEach((doc) => {
+                    attempts.push({
+                        docId: doc.id,
+                        ...doc.data()
+                    });
+                });
+
+                // Sort attempts by createdAt timestamp (newest attempts first)
+                attempts.sort((a, b) => {
+                    const dateA = new Date(a.createdAt || 0);
+                    const dateB = new Date(b.createdAt || 0);
+                    return dateB - dateA;
+                });
+
+                previousAttemptsData = attempts;
+                renderAttemptsHistoryTable(attempts);
+                calculateDashboardStatistics(attempts);
+                
+                toggleSyncBadge(false);
+            }, (error) => {
+                console.error("Attempts collection snapshot listener failed:", error);
+                toggleSyncBadge(false);
+            });
+        }
+
+        // Provision dynamic default data structure if missing on user document
+        async function createDefaultUserProfile() {
+            if (!window.userId || !window.firestoreDb) return;
+            try {
+                const userDocRef = window.firestoreDoc(window.firestoreDb, "USERS", window.userId);
+                await window.firestoreSetDoc(userDocRef, {
+                    name: "Candidate " + window.userId.substring(0, 5).toUpperCase()
+                }, { merge: true });
+                console.log("Default user document generated successfully with profile metadata.");
+            } catch (err) {
+                console.error("Could not write initial default profile values to Firestore:", err);
+            }
+        }
+
+        // Action: Submit updated name string to USERS/{userId}
+        async function handleSaveProfileName() {
+            const inputVal = document.getElementById('name-input').value.trim();
+            if (!inputVal) {
+                showSystemAlert("Incomplete input", "Please specify a valid student name parameter to continue updating your profile.");
+                return;
+            }
+
+            if (!window.userId || !window.firestoreDb) {
+                showSystemAlert("Offline Mode", "Your profile changes cannot be uploaded until an active connection is synced.");
+                return;
+            }
+
+            toggleSyncBadge(true);
+            try {
+                const userDocRef = window.firestoreDoc(window.firestoreDb, "USERS", window.userId);
+                await window.firestoreUpdateDoc(userDocRef, {
+                    name: inputVal
+                });
+                toggleInlineEdit(false);
+                showToastNotification("Candidate display profile name updated successfully!");
+            } catch (err) {
+                console.error("Failed to sync updated name variable to USERS collection:", err);
+                showSystemAlert("Update Error", "Unable to synchronize profile parameters. Check security settings.");
+            } finally {
+                toggleSyncBadge(false);
+            }
+        }
+
+        // Action: Self assign custom exam IDs for debugging/practice ease
+        async function handleManualSelfAssign() {
+            const examIdInp = document.getElementById('manual-exam-id');
+            const targetExamId = examIdInp.value.trim().toLowerCase();
+
+            if (!targetExamId) {
+                showSystemAlert("Input Required", "Enter an Exam ID (e.g. 'jee-chem', 'mock-math') to manually register a custom mock syllabus.");
+                return;
+            }
+
+            toggleSyncBadge(true);
+            try {
+                const userDocRef = window.firestoreDoc(window.firestoreDb, "USERS", window.userId);
+                const docSnap = await window.firestoreGetDoc(userDocRef);
+
+                let currentExamsList = [];
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    if (data.availableExams && Array.isArray(data.availableExams)) {
+                        currentExamsList = data.availableExams;
+                    }
+                }
+
+                if (currentExamsList.includes(targetExamId)) {
+                    showSystemAlert("Already Assigned", `Exam '${targetExamId}' is already included in your dashboard course library.`);
+                    toggleSyncBadge(false);
+                    return;
+                }
+
+                // Add to list and save
+                currentExamsList.push(targetExamId);
+                await window.firestoreUpdateDoc(userDocRef, {
+                    availableExams: currentExamsList
+                });
+
+                examIdInp.value = '';
+                showToastNotification(`Successfully assigned new syllabus exam: '${targetExamId}'!`);
+            } catch (err) {
+                console.error("Could not assign customized exam list selection:", err);
+                showSystemAlert("Database Sync Error", "An error occurred while updating the availableExams array in Firestore.");
+            } finally {
+                toggleSyncBadge(false);
+            }
+        }
+
+        // Helper: Convert remaining total countdown seconds back into readable timing
+        function formatRemainingTime(seconds) {
+            if (seconds === undefined || seconds === null) return "N/A";
+            const secNum = parseInt(seconds, 10);
+            if (isNaN(secNum) || secNum <= 0) return "00:00:00";
+            
+            const hours = Math.floor(secNum / 3600);
+            const minutes = Math.floor((secNum % 3600) / 60);
+            const secs = secNum % 60;
+
+            return [
+                hours.toString().padStart(2, '0'),
+                minutes.toString().padStart(2, '0'),
+                secs.toString().padStart(2, '0')
+            ].join(':');
+        }
+
+        // Render: Render assigned courses list cards
+        function renderAssignedExamsList(examsArray) {
+            const listContainer = document.getElementById('assigned-exams-container');
+            if (!listContainer) return;
+            listContainer.innerHTML = '';
+
+            if (!examsArray || examsArray.length === 0) {
+                listContainer.innerHTML = `
+                    <div class="text-center py-8 text-slate-400 bg-slate-50 rounded-xl border border-dashed border-slate-200">
+                        <i class="fas fa-file-signature text-xl block mb-2 text-slate-300"></i>
+                        <span class="text-xs font-semibold">No assigned papers matched.</span>
+                        <p class="text-[9px] text-slate-400 mt-1 max-w-[200px] mx-auto leading-normal">Ask your examiner or administrator to populate available courses, or self-assign a custom ID below.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            examsArray.forEach(examId => {
+                const cleanId = examId.toLowerCase().trim();
+                const cardId = `exam-card-${cleanId}`;
+
+                // Create container element
+                const card = document.createElement('div');
+                card.id = cardId;
+                card.className = "p-4 bg-slate-50 border border-slate-200/80 rounded-xl hover:border-blue-500 hover:shadow-sm transition-all flex flex-col gap-3";
+                
+                // Set default skeleton layout while loading
+                card.innerHTML = `
+                    <div class="flex items-center justify-between w-full">
+                        <span class="bg-blue-100 text-[#0f3460] font-black text-[9px] font-mono px-2 py-0.5 rounded tracking-wider uppercase block w-fit">${cleanId}</span>
+                        <div class="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600"></div>
+                    </div>
+                    <div class="space-y-2">
+                        <div class="h-3 bg-slate-200 rounded w-2/3 animate-pulse"></div>
+                        <div class="h-2 bg-slate-200 rounded w-full animate-pulse"></div>
+                    </div>
+                `;
+
+                listContainer.appendChild(card);
+
+                // Fetch database document parameters asynchronously 
+                fetchAndRenderExamCardMetadata(cleanId, cardId);
+            });
+        }
+
+        // Asynchronous Firestore metadata resolver corresponding to image_958876.png schemas
+        async function fetchAndRenderExamCardMetadata(examId, cardId) {
+            const cardElement = document.getElementById(cardId);
+            if (!cardElement) return;
+
+            try {
+                const examDocRef = window.firestoreDoc(window.firestoreDb, "Exams", examId);
+                const docSnap = await window.firestoreGetDoc(examDocRef);
+
+                if (docSnap.exists()) {
+                    const data = docSnap.data();
+                    
+                    const name = data.name || "Syllabus Mock Exam";
+                    const description = data.description || "Simulated test practice panel aligned with competitive examinations metrics.";
+                    const author = data.author || "Administrator";
+                    const questionCount = data.Question !== undefined ? data.Question : "N/A";
+                    const durationMins = data.duration !== undefined ? `${data.duration} Mins` : "N/A";
+
+                    cardElement.innerHTML = `
+                        <div class="flex flex-col gap-2">
+                            <div class="flex items-center justify-between gap-2">
+                                <span class="bg-blue-100 text-[#0f3460] font-black text-[9px] font-mono px-2 py-0.5 rounded tracking-wider uppercase block w-fit">${examId}</span>
+                                <span class="text-[9px] font-bold text-slate-400 truncate max-w-[120px]"><i class="fas fa-user-edit mr-1"></i>By: ${author}</span>
+                            </div>
+                            <h4 class="font-extrabold text-slate-800 text-xs md:text-sm leading-snug truncate" title="${name}">${name}</h4>
+                            <p class="text-[10px] text-slate-500 line-clamp-2 leading-relaxed" title="${description}">${description}</p>
+                            
+                            <div class="grid grid-cols-2 gap-2 bg-white p-2 rounded-lg border border-slate-100 text-[9px] md:text-[10px] font-bold text-slate-500">
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-question-circle text-blue-500 shrink-0"></i>
+                                    <span class="truncate">Q. Qty: <strong class="text-slate-800">${questionCount}</strong></span>
+                                </div>
+                                <div class="flex items-center gap-1">
+                                    <i class="fas fa-clock text-indigo-500 shrink-0"></i>
+                                    <span class="truncate">Duration: <strong class="text-slate-800">${durationMins}</strong></span>
+                                </div>
+                            </div>
+                            
+                            <button onclick="handleLaunchExam('${examId}')" class="mt-1 w-full bg-[#0f3460] hover:bg-[#154680] text-white text-[11px] font-black py-2 rounded-lg shadow-sm transition-colors text-center uppercase tracking-wider">
+                                Start Exam
+                            </button>
+                        </div>
+                    `;
+                } else {
+                    // Document does not exist in Exams collection
+                    cardElement.innerHTML = `
+                        <div class="flex flex-col gap-1">
+                            <span class="bg-rose-100 text-rose-700 font-black text-[9px] font-mono px-2 py-0.5 rounded tracking-wider uppercase block w-fit">${examId}</span>
+                            <h4 class="font-bold text-slate-800 text-xs mt-1">Syllabus Missing</h4>
+                            <p class="text-[10px] text-slate-400 leading-normal">The document path <code class="bg-slate-100 px-1 py-0.5 rounded">Exams/${examId}</code> was not found on Firestore.</p>
+                            <button onclick="handleLaunchExam('${examId}')" class="mt-2 w-full bg-slate-200 hover:bg-slate-300 text-slate-700 text-[10px] font-bold py-1.5 rounded transition-colors">
+                                Force Launch Exam
+                            </button>
+                        </div>
+                    `;
+                }
+            } catch (err) {
+                console.error(`Error resolving metadata for exam: ${examId}`, err);
+                cardElement.innerHTML = `
+                    <div class="flex flex-col gap-1">
+                        <span class="bg-amber-100 text-amber-700 font-black text-[9px] font-mono px-2 py-0.5 rounded tracking-wider uppercase block w-fit">${examId}</span>
+                        <h4 class="font-bold text-slate-800 text-xs mt-1">Load Failed</h4>
+                        <p class="text-[10px] text-slate-400">Database communication properties error.</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render: Attempts logs
+        function renderAttemptsHistoryTable(attemptsArray) {
+            const tableBody = document.getElementById('attempts-history-list');
+            if (!tableBody) return;
+            tableBody.innerHTML = '';
+
+            if (!attemptsArray || attemptsArray.length === 0) {
+                tableBody.innerHTML = `
+                    <tr>
+                        <td colspan="5" class="py-16 text-center text-slate-400 font-medium">
+                            <i class="fas fa-history text-3xl text-slate-300 block mb-3"></i>
+                            <span>No exam attempts recorded yet.</span>
+                            <p class="text-[10px] text-slate-400 mt-1 leading-relaxed max-w-sm mx-auto">Click "Start Exam" in your assigned library list to initiate your first digital assessment on the simulator.</p>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            attemptsArray.forEach(attempt => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-50/50 transition-colors border-b border-slate-100";
+
+                // Map state formatting
+                const isCompleted = (attempt.status === 'completed');
+                const statusBadge = isCompleted 
+                    ? `<span class="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[9px] font-black font-mono px-2 py-0.5 rounded-full uppercase">Completed</span>`
+                    : `<span class="bg-amber-50 text-amber-700 border border-amber-200 text-[9px] font-black font-mono px-2 py-0.5 rounded-full uppercase">Ongoing</span>`;
+
+                const scoreTextVal = isCompleted
+                    ? `<span class="text-emerald-700 font-black font-mono text-sm">${attempt.score !== undefined ? attempt.score : 0}</span>`
+                    : `<span class="text-amber-600 font-bold font-mono text-xs italic">Pending</span>`;
+
+                const targetExamId = attempt.examId || attempt["Exam id"] || "unknown";
+
+                const readableTime = formatRemainingTime(attempt.time);
+
+                // Build Actions Button - redirect to main simulator or review options
+                const actionButton = isCompleted
+                    ? `<button onclick="handleLaunchExam('${targetExamId}')" class="text-blue-600 hover:text-blue-800 hover:underline text-[10px] font-bold"><i class="fas fa-redo mr-1"></i> Retake Practice</button>`
+                    : `<button onclick="handleLaunchExam('${targetExamId}')" class="bg-amber-500 hover:bg-amber-600 text-white text-[10px] font-extrabold px-3 py-1 rounded-md shadow-sm transition-colors"><i class="fas fa-play text-[8px] mr-1"></i> Resume Test</button>`;
+
+                tr.innerHTML = `
+                    <td class="py-3.5 px-5 font-black text-[#0f3460] font-mono text-xs">${targetExamId.toUpperCase()}</td>
+                    <td class="py-3.5 px-4">${statusBadge}</td>
+                    <td class="py-3.5 px-4 font-mono text-[11px] font-semibold text-slate-500">${readableTime}</td>
+                    <td class="py-3.5 px-4 text-center">${scoreTextVal}</td>
+                    <td class="py-3.5 px-5 text-right">${actionButton}</td>
+                `;
+
+                tableBody.appendChild(tr);
+            });
+        }
+
+        // Render: Real-time calculated widgets
+        function calculateDashboardStatistics(attemptsArray) {
+            let totalAttempts = attemptsArray.length;
+            let completedCount = 0;
+            let ongoingCount = 0;
+            let highestScore = null;
+
+            attemptsArray.forEach(attempt => {
+                if (attempt.status === 'completed') {
+                    completedCount++;
+                    const parsedScore = parseFloat(attempt.score) || 0;
+                    if (highestScore === null || parsedScore > highestScore) {
+                        highestScore = parsedScore;
+                    }
+                } else if (attempt.status === 'ongoing' || !attempt.status) {
+                    ongoingCount++;
+                }
+            });
+
+            document.getElementById('stat-total-attempts').innerText = totalAttempts;
+            document.getElementById('stat-completed-exams').innerText = completedCount;
+            document.getElementById('stat-ongoing-exams').innerText = ongoingCount;
+            document.getElementById('stat-top-score').innerText = (highestScore !== null) ? highestScore : "N/A";
+        }
+
+        // Action: Launch CBT exam on simulator by injecting parameters into query params matching exam.html?id=examid
+        function handleLaunchExam(examId) {
+            if (!examId) return;
+            // Persist target selection inside local storage for index.html initialization fallback
+            localStorage.setItem('nta_exam_id', examId.toLowerCase().trim());
+            
+            // Extract the real origin domain to handle navigation cleanly even within sandboxed blob contexts
+            let base = window.location.href;
+            if (base.startsWith('blob:')) {
+                // Strip blob prefix to get actual base origin path
+                base = base.substring(5);
+            }
+            
+            try {
+                const urlObj = new URL(base);
+                // Dynamically resolve relative path to exam.html on the absolute origin host
+                const resolvedUrl = `${urlObj.origin}/exam.html?id=${encodeURIComponent(examId.toLowerCase().trim())}`;
+                window.location.href = resolvedUrl;
+            } catch (err) {
+                console.warn("Dynamic URL parsing failed, falling back to relative navigation:", err);
+                // Relative URL fallback if origin construction fails
+                window.location.href = `exam.html?id=${encodeURIComponent(examId.toLowerCase().trim())}`;
+            }
+        }
+
+        // Action: Re-trigger firestore listen sequence manually
+        function handleReloadDashboardData() {
+            loadDashboardContentStream();
+            showToastNotification("Live Firestore dashboard streams re-established!");
+        }
+    </script>
+
+</body>
+</html>
