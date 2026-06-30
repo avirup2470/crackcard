@@ -788,7 +788,7 @@
             try {
                 const urlObj = new URL(base);
                 // Dynamically resolve relative path to exam.html on the absolute origin host
-                const resolvedUrl = `exam.html?id=${encodeURIComponent(examId.toLowerCase().trim())}`;
+                const resolvedUrl = `${urlObj.origin}/exam.html?id=${encodeURIComponent(examId.toLowerCase().trim())}`;
                 window.location.href = resolvedUrl;
             } catch (err) {
                 console.warn("Dynamic URL parsing failed, falling back to relative navigation:", err);
@@ -801,6 +801,38 @@
         function handleReloadDashboardData() {
             loadDashboardContentStream();
             showToastNotification("Live Firestore dashboard streams re-established!");
+        }
+
+        // Action: Launch CBT exam on simulator by injecting parameters into query params matching exam.html?id=examid
+        function handleLaunchExam(examId) {
+            if (!examId) return;
+            const cleanExamId = examId.toLowerCase().trim();
+            // Persist target selection inside local storage for index.html initialization fallback
+            localStorage.setItem('nta_exam_id', cleanExamId);
+            
+            // Extract the real origin domain to handle navigation cleanly even within sandboxed blob contexts
+            let base = window.location.href;
+            if (base.startsWith('blob:')) {
+                // Strip blob prefix to get actual base origin path
+                base = base.substring(5);
+            }
+            
+            try {
+                const urlObj = new URL(base);
+                
+                // Retain path directories (like /crackcard/) to support subdirectory hosting like GitHub Pages
+                const segments = urlObj.pathname.split('/');
+                segments.pop(); // Remove the current filename (e.g. dashboard.html or index.html)
+                const directoryPath = segments.join('/');
+                
+                // Dynamically resolve absolute path to exam.html including subdirectories
+                const resolvedUrl = `${urlObj.origin}${directoryPath}/exam.html?id=${encodeURIComponent(cleanExamId)}`;
+                window.location.href = resolvedUrl;
+            } catch (err) {
+                console.warn("Dynamic URL parsing failed, falling back to relative navigation:", err);
+                // Relative URL fallback if origin construction fails
+                window.location.href = `exam.html?id=${encodeURIComponent(cleanExamId)}`;
+            }
         }
     </script>
 
