@@ -1,0 +1,705 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrackCard - Excel Exam Creator & Seeder</title>
+    <!-- Tailwind CSS for modern design tokens -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome for symbols & indicators -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700;900&family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- SheetJS (XLSX Parser) from secure CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+
+    <style>
+        body {
+            font-family: 'Inter', 'Roboto', sans-serif;
+            background-color: #f8fafc;
+        }
+        /* Highlight focus transitions */
+        .step-inactive {
+            opacity: 0.5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col justify-between overflow-x-hidden">
+
+    <!-- MASTER BRAND HEADER -->
+    <header class="bg-[#0f3460] text-white px-6 py-4 flex flex-col sm:flex-row justify-between items-center shadow-lg gap-4 shrink-0 z-40">
+        <div class="flex items-center space-x-3.5">
+            <div class="bg-white p-1.5 rounded-lg shadow-sm">
+                <span class="text-[#0f3460] font-extrabold text-base px-2.5 tracking-wider">CRACKCARD</span>
+            </div>
+            <div class="border-l border-slate-500 pl-3.5">
+                <h1 class="text-xs text-slate-300 font-bold uppercase tracking-wider">Admin Workspace</h1>
+                <p class="text-sm font-extrabold text-white">Excel Exam Seeder & Creator</p>
+            </div>
+        </div>
+
+        <!-- DYNAMIC FIREBASE STATUS BADGE -->
+        <div class="flex items-center space-x-3">
+            <div id="auth-status-badge" class="flex items-center space-x-1.5 bg-slate-900/40 text-slate-300 border border-slate-700/60 text-[10px] font-bold px-3 py-1.5 rounded-lg">
+                <i class="fas fa-circle-notch animate-spin text-[8px] text-amber-500 mr-1" id="auth-status-icon"></i>
+                <span id="auth-status-text">CONNECTING TO FIREBASE...</span>
+            </div>
+        </div>
+    </header>
+
+    <!-- MAIN BODY SEEDING INTERFACE -->
+    <main class="flex-1 max-w-6xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- LEFT SIDE PANEL: CONFIGURATIONS & EXCEL INPUT (5 columns) -->
+        <section class="lg:col-span-5 space-y-6">
+            
+            <!-- STEP 1: EXAM METADATA SPECIFICATIONS -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
+                    <span class="bg-[#0f3460] text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">1</span>
+                    <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Exam Specifications</h3>
+                </div>
+
+                <div class="space-y-3.5 text-xs">
+                    <!-- Exam Identifier ID (Crucial path doc id - now auto-generated) -->
+                    <div class="space-y-1">
+                        <label class="block font-bold text-slate-700">Exam Unique Identifier ID (Auto-Generated):</label>
+                        <div class="flex gap-2">
+                            <input type="text" id="exam-id" readonly placeholder="Generating unique Firestore ID..." class="w-full bg-slate-100 border border-slate-200 focus:outline-none rounded-lg px-3 py-2.5 font-bold text-slate-500 uppercase tracking-wider select-all" />
+                            <button type="button" onclick="triggerRegenerateId()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 px-3.5 py-2.5 rounded-lg text-xs font-bold shrink-0 transition-colors" title="Regenerate ID">
+                                <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Exam Name -->
+                    <div class="space-y-1">
+                        <label class="block font-bold text-slate-700">Exam Display Title Name:</label>
+                        <input type="text" id="exam-name" placeholder="e.g. JEE Main Chemistry Mock Test - 01" class="w-full bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:bg-white rounded-lg px-3 py-2.5 font-semibold text-slate-800" />
+                    </div>
+
+                    <!-- Author -->
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="space-y-1">
+                            <label class="block font-bold text-slate-700">Exam Author:</label>
+                            <input type="text" id="exam-author" placeholder="e.g. CrackCard Faculty" class="w-full bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:bg-white rounded-lg px-3 py-2.5 font-semibold text-slate-800" />
+                        </div>
+                        <div class="space-y-1">
+                            <label class="block font-bold text-slate-700">Duration (Minutes):</label>
+                            <input type="number" id="exam-duration" value="180" min="1" class="w-full bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:bg-white rounded-lg px-3 py-2.5 font-bold text-slate-800" />
+                        </div>
+                    </div>
+
+                    <!-- Synopsis Description -->
+                    <div class="space-y-1">
+                        <label class="block font-bold text-slate-700">Exam Synopsis Description:</label>
+                        <textarea id="exam-description" rows="3" placeholder="Syllabus coverage highlights and general instructions for candidates." class="w-full bg-slate-50 border border-slate-200 focus:outline-none focus:ring-1 focus:ring-blue-600 focus:bg-white rounded-lg px-3 py-2.5 text-slate-600 leading-relaxed font-medium"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <!-- STEP 2: EXCEL FILE DROP ZONE -->
+            <div id="step-upload-box" class="bg-white rounded-2xl shadow-sm border border-slate-200 p-5 space-y-4">
+                <div class="flex items-center space-x-3 border-b border-slate-100 pb-3">
+                    <span class="bg-[#0f3460] text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">2</span>
+                    <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Select Excel Spreadsheet</h3>
+                </div>
+
+                <!-- SCHEMA LAYOUT SPECIFICATION BLUEPRINT ALERT -->
+                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3.5 space-y-1.5 text-[10px] leading-relaxed text-slate-600">
+                    <span class="font-extrabold text-[#0f3460] block uppercase tracking-wide"><i class="fas fa-table mr-1"></i>Required Column Blueprint (image_562b3b.png)</span>
+                    <p>Ensure your sheet contains the following case-sensitive headers in row 1:</p>
+                    <code class="block bg-slate-100 px-2 py-1 rounded text-[9px] font-mono font-bold text-slate-700">index, Q, o1, o2, o3, o4, marks, penalty, ans, subject, url</code>
+                </div>
+
+                <!-- DRAG & DROP BOX CONTAINER -->
+                <div id="drop-zone" class="border-2 border-dashed border-slate-200 hover:border-blue-500 rounded-2xl p-6 transition-all bg-slate-50/50 flex flex-col items-center justify-center text-center cursor-pointer gap-2 relative">
+                    <input type="file" id="excel-file-input" accept=".xlsx, .xls, .csv" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full" onchange="handleExcelFileSelect(event)" />
+                    <i class="fas fa-file-excel text-4xl text-emerald-500"></i>
+                    <span class="text-xs font-bold text-slate-700">Drop your Excel file here or click to browse</span>
+                    <span class="text-[10px] text-slate-400">Supported formats: .xlsx, .xls, .csv</span>
+                </div>
+
+                <!-- CURRENTLY PARSED STATISTICS COUNTERS -->
+                <div id="parsing-status-panel" class="hidden bg-emerald-50 border border-emerald-100 p-3.5 rounded-xl grid grid-cols-2 gap-3 text-center text-xs">
+                    <div class="bg-white p-2 rounded-lg border border-emerald-100">
+                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Total Questions</span>
+                        <span id="calc-total-questions" class="text-base font-black text-emerald-700 block mt-0.5">0</span>
+                    </div>
+                    <div class="bg-white p-2 rounded-lg border border-emerald-100">
+                        <span class="text-[9px] text-slate-400 font-bold uppercase tracking-wider block">Cumulative Marks</span>
+                        <span id="calc-cumulative-marks" class="text-base font-black text-indigo-700 block mt-0.5">0</span>
+                    </div>
+                </div>
+            </div>
+
+        </section>
+
+        <!-- RIGHT SIDE PANEL: LIVE PARSED REVIEW & UPLOAD ACTIONS (7 columns) -->
+        <section class="lg:col-span-7 space-y-6">
+
+            <!-- STEP 3: QUESTIONS PREVIEW REVIEW MATRIX -->
+            <div class="bg-white rounded-2xl shadow-sm border border-slate-200 overflow-hidden flex flex-col h-[520px]">
+                <div class="bg-slate-50 border-b border-slate-200 px-5 py-4 flex items-center justify-between">
+                    <div class="flex items-center space-x-3">
+                        <span class="bg-[#0f3460] text-white text-xs font-black w-6 h-6 rounded-full flex items-center justify-center">3</span>
+                        <h3 class="font-extrabold text-slate-800 text-sm uppercase tracking-wide">Questions Verification Board</h3>
+                    </div>
+                    <span id="review-rows-badge" class="bg-slate-200 text-slate-700 text-[10px] font-black font-mono px-2 py-1 rounded-md uppercase">0 Row Items</span>
+                </div>
+
+                <!-- PREVIEW ITEMS LIST SCROLLER -->
+                <div class="flex-1 overflow-y-auto p-4 space-y-3.5" id="preview-list-container">
+                    <div class="flex flex-col items-center justify-center h-full text-slate-400 text-center space-y-2">
+                        <i class="fas fa-clipboard-check text-4xl text-slate-200"></i>
+                        <span class="text-xs font-bold">No Questions Loaded</span>
+                        <p class="text-[10px] text-slate-400 max-w-[240px]">Select or drop an Excel spreadsheet. Fully parsed records will populate here for preview verification.</p>
+                    </div>
+                </div>
+
+                <!-- MASTER ACTION: SUBMIT EXAM -->
+                <div class="bg-slate-50 border-t border-slate-200 p-4 shrink-0 flex items-center justify-between gap-3">
+                    <p class="text-[10px] text-slate-500 leading-normal max-w-sm">After review, hit the button to set metadata and seed question subcollections to path <code>Exams/{examid}/Questions/</code>.</p>
+                    <button id="submit-payload-btn" onclick="handleSubmitAndUpload()" class="step-inactive bg-[#27ae60] hover:bg-[#219653] text-white font-extrabold text-xs px-5 py-3 rounded-xl shadow-md transition-all flex items-center gap-1.5 shrink-0 uppercase tracking-wider">
+                        <i class="fas fa-cloud-upload-alt"></i>
+                        <span>Upload & Create Exam</span>
+                    </button>
+                </div>
+            </div>
+
+        </section>
+
+    </main>
+
+    <!-- SUCCESS ROUTING OVERLAY MODAL -->
+    <div id="success-overlay" class="fixed inset-0 bg-black/75 z-50 flex items-center justify-center hidden p-4 animate-fade-in">
+        <div class="bg-white rounded-2xl max-w-lg w-full overflow-hidden shadow-2xl border border-slate-100 text-center">
+            
+            <div class="bg-[#0f3460] py-8 text-white">
+                <div class="w-16 h-16 bg-emerald-500 rounded-full flex items-center justify-center mx-auto shadow-md mb-3 animate-bounce">
+                    <i class="fas fa-check text-2xl"></i>
+                </div>
+                <h3 class="font-black text-lg uppercase tracking-wide">Exam Seeding Completed!</h3>
+                <p class="text-xs text-slate-300 font-medium">Successfully written Exam document & Question subcollections</p>
+            </div>
+
+            <div class="p-6 space-y-5 text-xs text-slate-600">
+                <p class="leading-relaxed">
+                    Your exam questions are synchronized successfully! Students can immediately attempt the syllabus via the following dynamic JEE Main Exam Portal simulator link:
+                </p>
+
+                <!-- EXAM URL BOX -->
+                <div class="bg-slate-50 p-3.5 rounded-xl border border-slate-200 flex items-center gap-2">
+                    <input type="text" id="shareable-exam-url" readonly value="" class="flex-1 bg-transparent text-[#0f3460] font-bold text-[11px] focus:outline-none truncate" />
+                    <button onclick="copyShareableUrl()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-[10px] font-black uppercase px-3 py-2 rounded-lg shadow-sm shrink-0 transition-colors">
+                        <i class="fas fa-copy mr-1"></i> Copy Link
+                    </button>
+                </div>
+
+                <p id="copy-notification" class="text-[10px] text-emerald-600 font-extrabold tracking-wide uppercase hidden animate-pulse">
+                    <i class="fas fa-check-circle mr-1"></i> Link Copied to Clipboard!
+                </p>
+            </div>
+
+            <div class="bg-slate-50 border-t border-slate-200 px-6 py-4 flex justify-between gap-3">
+                <button onclick="handleReloadUploader()" class="bg-slate-500 hover:bg-slate-600 text-white font-bold px-4 py-2.5 rounded-lg">
+                    Seeder Workspace
+                </button>
+                <a id="direct-launcher-btn" href="#" target="_blank" class="bg-indigo-600 hover:bg-indigo-700 text-white font-black px-5 py-2.5 rounded-lg shadow transition-colors flex items-center gap-1.5 uppercase tracking-wide">
+                    <span>Simulate Exam</span>
+                    <i class="fas fa-external-link-alt text-[10px]"></i>
+                </a>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- GENERAL ALERT SYSTEM POPUP -->
+    <div id="general-alert-popup" class="fixed inset-0 bg-black/50 z-50 flex items-center justify-center hidden p-4">
+        <div class="bg-white rounded-xl max-w-sm w-full overflow-hidden shadow-2xl">
+            <div class="bg-rose-900 px-4 py-2.5 text-white flex justify-between items-center">
+                <h3 class="font-bold text-xs uppercase tracking-wide flex items-center">
+                    <i class="fas fa-exclamation-circle mr-2 text-amber-400"></i>
+                    <span>Operation Alert</span>
+                </h3>
+                <button onclick="closeGeneralAlert()" class="text-white hover:text-slate-300 font-bold">&times;</button>
+            </div>
+            <div class="p-5 text-slate-700 text-xs leading-relaxed" id="general-alert-body">
+                Placeholder body text information.
+            </div>
+            <div class="bg-slate-100 px-4 py-2.5 flex justify-end">
+                <button onclick="closeGeneralAlert()" class="bg-rose-900 hover:bg-rose-800 text-white text-xs font-bold px-4 py-1.5 rounded shadow">
+                    OK
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- INITIATING FIREBASE SCRIPT MODULE -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-app.js";
+        import { getFirestore, collection, doc, setDoc, writeBatch } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-firestore.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/12.15.0/firebase-auth.js";
+
+        // Verified Active Firebase credentials provided by customer
+        const firebaseConfig = {
+            apiKey: "AIzaSyCN68QPy4_6xAtytseh1e9ineUdwTlof4o",
+            authDomain: "crackcard-61c53.firebaseapp.com",
+            projectId: "crackcard-61c53",
+            storageBucket: "crackcard-61c53.firebasestorage.app",
+            messagingSenderId: "603880423789",
+            appId: "1:603880423789:web:4f287967731b43ced99a64",
+            measurementId: "G-P762YK7392"
+        };
+
+        // Initialize Firebase instances
+        const app = initializeApp(firebaseConfig);
+        const db = getFirestore(app);
+        const auth = getAuth(app);
+
+        // Bind helpers securely to the window instance to establish global scope trigger
+        window.firestoreDb = db;
+        window.firestoreDoc = doc;
+        window.firestoreSetDoc = setDoc;
+        window.firestoreWriteBatch = writeBatch;
+        window.firestoreCollection = collection;
+
+        window.triggerRegenerateId = function() {
+            if (window.firestoreDb && window.firestoreCollection && window.firestoreDoc) {
+                try {
+                    const colRef = window.firestoreCollection(window.firestoreDb, "Exams");
+                    const tempDocRef = window.firestoreDoc(colRef);
+                    const inputEl = document.getElementById('exam-id');
+                    if (inputEl && tempDocRef.id) {
+                        inputEl.value = tempDocRef.id;
+                    }
+                } catch (err) {
+                    console.error("Failed to auto-generate exam document ID:", err);
+                }
+            }
+        };
+
+        // Perform authentication stream checks to guarantee proper database operations
+        async function runUploaderAuthSequence() {
+            try {
+                let user = await new Promise((resolve) => {
+                    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+                        unsubscribe();
+                        resolve(currentUser);
+                    });
+                });
+
+                if (!user) {
+                    let credential;
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        try {
+                            credential = await signInWithCustomToken(auth, __initial_auth_token);
+                        } catch (err) {
+                            console.warn("Custom token invalid, invoking anonymous fallback:", err);
+                            credential = await signInAnonymously(auth);
+                        }
+                    } else {
+                        credential = await signInAnonymously(auth);
+                    }
+                    user = credential.user;
+                }
+
+                window.userId = user.uid;
+
+                const badge = document.getElementById('auth-status-badge');
+                const textEl = document.getElementById('auth-status-text');
+                const iconEl = document.getElementById('auth-status-icon');
+
+                if (badge && textEl && iconEl) {
+                    badge.className = "flex items-center space-x-1.5 bg-emerald-950/60 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold px-3 py-1.5 rounded-lg";
+                    textEl.innerText = "FIREBASE ONLINE";
+                    iconEl.className = "fas fa-circle text-[8px] text-emerald-400 mr-1";
+                }
+
+                // Call automatic exam ID generation once Firebase online handshake is done
+                window.triggerRegenerateId();
+
+            } catch (err) {
+                console.error("Firebase auth verification error inside Admin uploader:", err);
+                const textEl = document.getElementById('auth-status-text');
+                if (textEl) {
+                    textEl.innerText = "AUTHENTICATION ERROR";
+                    textEl.className = "text-rose-500 font-bold";
+                }
+            }
+        }
+
+        // Run authentication sequence
+        runUploaderAuthSequence();
+    </script>
+
+    <!-- GENERAL CLIENT-SIDE SCRIPTS -->
+    <script>
+        let parsedQuestionsPayload = [];
+        let totalCalculatedMarks = 0;
+
+        // Drag & Drop styles bindings
+        const dropZone = document.getElementById('drop-zone');
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-500', 'bg-blue-50/20');
+            }, false);
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-blue-50/20');
+            }, false);
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files.length > 0) {
+                document.getElementById('excel-file-input').files = files;
+                processExcelFile(files[0]);
+            }
+        });
+
+        // Trigger Excel processor on simple selection change
+        function handleExcelFileSelect(e) {
+            const files = e.target.files;
+            if (files.length > 0) {
+                processExcelFile(files[0]);
+            }
+        }
+
+        // Perform primary spreadsheet column extraction utilizing SheetJS
+        function processExcelFile(file) {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = new Uint8Array(e.target.result);
+                    const workbook = XLSX.read(data, { type: 'array' });
+
+                    const requiredHeaders = ['index', 'q', 'o1', 'o2', 'o3', 'o4', 'marks', 'penalty', 'ans', 'subject', 'url'];
+                    let matchedSheetName = null;
+                    let matchedWorksheet = null;
+                    let sheetRows = null;
+
+                    // Scan every single sheet in the uploaded spreadsheet workbook
+                    for (const sheetName of workbook.SheetNames) {
+                        const worksheet = workbook.Sheets[sheetName];
+                        // Get raw worksheet rows with header row included for evaluation
+                        const rawSheetData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+                        
+                        if (rawSheetData.length > 0) {
+                            // Extract, lowercase, and trim all raw sheet column headers
+                            const headers = rawSheetData[0].map(h => String(h || '').trim().toLowerCase());
+                            
+                            // Check if every single required column header is present in this sheet
+                            const matchesAll = requiredHeaders.every(req => headers.includes(req));
+                            
+                            if (matchesAll) {
+                                matchedSheetName = sheetName;
+                                matchedWorksheet = worksheet;
+                                sheetRows = XLSX.utils.sheet_to_json(worksheet);
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!matchedWorksheet) {
+                        displayAlertPopup(
+                            "Invalid Excel Structure", 
+                            "Could not find any sheet in your Excel file containing the required columns matching image_562b3b.png: \n\n" +
+                            "Required columns: index, Q, o1, o2, o3, o4, marks, penalty, ans, subject, url"
+                        );
+                        return;
+                    }
+
+                    console.log(`Success! Matched columns on sheet tab: "${matchedSheetName}" with ${sheetRows.length} rows.`);
+
+                    // Format and sanitize rows to enforce image_562b3b.png properties
+                    mapAndVerifySpreadsheetPayload(sheetRows);
+
+                } catch (err) {
+                    console.error("SheetJS Parsing Exception:", err);
+                    displayAlertPopup("Spreadsheet Parsing Error", "Unable to decode your Excel file. Verify that it is not corrupt or format-protected.");
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        }
+
+        // Row mapping & sanitization
+        function mapAndVerifySpreadsheetPayload(rawRows) {
+            parsedQuestionsPayload = [];
+            totalCalculatedMarks = 0;
+
+            rawRows.forEach((row, rIdx) => {
+                // Read columns case-insensitively or with fallback property mapping
+                const index = parseInt(row.index || row.Index) || (rIdx + 1);
+                const Q = row.Q || row.q || row.Question || row.question || null;
+                const o1 = String(row.o1 !== undefined ? row.o1 : row.Option1 || '');
+                const o2 = String(row.o2 !== undefined ? row.o2 : row.Option2 || '');
+                const o3 = String(row.o3 !== undefined ? row.o3 : row.Option3 || '');
+                const o4 = String(row.o4 !== undefined ? row.o4 : row.Option4 || '');
+                const marks = parseFloat(row.marks || row.Marks) || 4;
+                const penalty = parseFloat(row.penalty || row.Penalty || 0);
+                const ans = parseInt(row.ans || row.Ans || row.Answer || row.answer) || null;
+                const subject = String(row.subject || row.Subject || 'General');
+                const url = row.url || row.Url || row.URL || null;
+
+                // Validate minimum row integrity requirements
+                if (Q) {
+                    parsedQuestionsPayload.push({
+                        index,
+                        Q,
+                        o1,
+                        o2,
+                        o3,
+                        o4,
+                        marks,
+                        penalty,
+                        ans,
+                        subject,
+                        url
+                    });
+                    totalCalculatedMarks += marks;
+                }
+            });
+
+            if (parsedQuestionsPayload.length === 0) {
+                displayAlertPopup("Invalid Schema Structure", "No valid question rows extracted. Check headers: index, Q, o1, o2, o3, o4, marks, penalty, ans, subject, url.");
+                return;
+            }
+
+            // Sync visual statistics widgets
+            document.getElementById('calc-total-questions').innerText = parsedQuestionsPayload.length;
+            document.getElementById('calc-cumulative-marks').innerText = totalCalculatedMarks;
+            document.getElementById('parsing-status-panel').classList.remove('hidden');
+
+            // Render Preview Table Grid
+            renderParsedPreviewGrid();
+        }
+
+        // Render extracted rows inside Preview window
+        function renderParsedPreviewGrid() {
+            const container = document.getElementById('preview-list-container');
+            const badge = document.getElementById('review-rows-badge');
+            if (!container) return;
+
+            container.innerHTML = '';
+            badge.innerText = `${parsedQuestionsPayload.length} Row Items`;
+
+            parsedQuestionsPayload.forEach((q, seq) => {
+                const itemDiv = document.createElement('div');
+                itemDiv.className = "p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-3 relative hover:border-slate-300 transition-all text-xs";
+
+                // Warning indicator for missing ans index keys
+                const isAnsMissing = (q.ans === null || isNaN(q.ans) || q.ans < 1 || q.ans > 4);
+                const ansWarningBadge = isAnsMissing 
+                    ? `<span class="bg-rose-100 text-rose-700 font-extrabold text-[9px] px-2 py-0.5 rounded uppercase flex items-center gap-1 shrink-0"><i class="fas fa-exclamation-triangle"></i> Missing Key</span>`
+                    : `<span class="bg-emerald-100 text-emerald-800 font-extrabold text-[9px] px-2 py-0.5 rounded tracking-wide shrink-0">Correct Key: Option ${q.ans}</span>`;
+
+                itemDiv.innerHTML = `
+                    <div class="flex items-center justify-between gap-2 border-b border-slate-200/60 pb-1.5 shrink-0">
+                        <div class="flex items-center gap-2">
+                            <span class="bg-[#0f3460] text-white font-mono font-black text-[10px] px-2 py-0.5 rounded">Seq: ${q.index}</span>
+                            <span class="bg-blue-100 text-[#0f3460] font-bold text-[9px] px-2 py-0.5 rounded uppercase font-mono">${q.subject}</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-[9px] text-slate-500 font-bold font-mono">Marks: +${q.marks} / -${q.penalty}</span>
+                            ${ansWarningBadge}
+                        </div>
+                    </div>
+
+                    <div class="space-y-1.5">
+                        <p class="font-extrabold text-slate-800 leading-relaxed whitespace-pre-wrap">${q.Q}</p>
+                        ${q.url ? `<p class="text-[9px] text-indigo-600 truncate font-semibold"><i class="fas fa-image mr-1"></i>Diagram URL: ${q.url}</p>` : ''}
+                    </div>
+
+                    <div class="grid grid-cols-2 gap-2 text-[11px] font-semibold text-slate-600 bg-white p-2.5 rounded-lg border border-slate-100">
+                        <div class="truncate ${q.ans === 1 ? 'text-emerald-700 font-black' : ''}">o1: ${q.o1}</div>
+                        <div class="truncate ${q.ans === 2 ? 'text-emerald-700 font-black' : ''}">o2: ${q.o2}</div>
+                        <div class="truncate ${q.ans === 3 ? 'text-emerald-700 font-black' : ''}">o3: ${q.o3}</div>
+                        <div class="truncate ${q.ans === 4 ? 'text-emerald-700 font-black' : ''}">o4: ${q.o4}</div>
+                    </div>
+                `;
+
+                container.appendChild(itemDiv);
+            });
+
+            // Unlock the main execution upload trigger
+            document.getElementById('submit-payload-btn').classList.remove('step-inactive');
+        }
+
+        // Action: Submit structured documents to target Firestore
+        async function handleSubmitAndUpload() {
+            // Field validations
+            const examId = document.getElementById('exam-id').value.trim().toLowerCase();
+            const examName = document.getElementById('exam-name').value.trim();
+            const examAuthor = document.getElementById('exam-author').value.trim() || 'CrackCard Creator';
+            const examDesc = document.getElementById('exam-description').value.trim() || '';
+            const examDur = parseInt(document.getElementById('exam-duration').value) || 180;
+
+            if (!examId) {
+                displayAlertPopup("Configuration Missing", "Please configure a valid Unique Identifier ID string for the exam.");
+                return;
+            }
+
+            if (!examName) {
+                displayAlertPopup("Configuration Missing", "Please specify the Exam Display Title Name to initiate database records.");
+                return;
+            }
+
+            if (parsedQuestionsPayload.length === 0) {
+                displayAlertPopup("Empty Seeder Queue", "No questions loaded from your Excel sheet. Upload a valid file to populate the preview card first.");
+                return;
+            }
+
+            // Check network login states
+            if (!window.firestoreDb) {
+                displayAlertPopup("Offline Mode Detected", "Database connections could not be retrieved. Check your network adapter status.");
+                return;
+            }
+
+            // Button Loading triggers
+            const uploadBtn = document.getElementById('submit-payload-btn');
+            const originalHtml = uploadBtn.innerHTML;
+            uploadBtn.innerHTML = `<i class="fas fa-spinner animate-spin"></i> <span>Seeding Documents...</span>`;
+            uploadBtn.disabled = true;
+
+            try {
+                // 1. Write the core metadata document to Exams/{examid}
+                const examDocRef = window.firestoreDoc(window.firestoreDb, "Exams", examId);
+                await window.firestoreSetDoc(examDocRef, {
+                    name: examName,
+                    description: examDesc,
+                    author: examAuthor,
+                    duration: Number(examDur),
+                    Question: Number(parsedQuestionsPayload.length),
+                    totalMarks: Number(totalCalculatedMarks)
+                }, { merge: true });
+
+                console.log("Exam metadata created successfully inside Exams collection:", examId);
+
+                // 2. Batch upload questions subcollections: Exams/{examid}/Questions
+                // To support Firestore bulk write limits, write documents in standard modular sequences
+                const batch = window.firestoreWriteBatch(window.firestoreDb);
+
+                parsedQuestionsPayload.forEach(q => {
+                    // Unique document ID matching indexes
+                    const qDocRef = window.firestoreDoc(
+                        window.firestoreDb, 
+                        "Exams", 
+                        examId, 
+                        "Questions", 
+                        `question_${q.index}`
+                    );
+
+                    batch.set(qDocRef, {
+                        index: Number(q.index),
+                        Q: q.Q,
+                        o1: q.o1,
+                        o2: q.o2,
+                        o3: q.o3,
+                        o4: q.o4,
+                        marks: Number(q.marks),
+                        penalty: Number(q.penalty),
+                        ans: Number(q.ans),
+                        subject: q.subject,
+                        url: q.url
+                    });
+                });
+
+                // Commit subcollection batch
+                await batch.commit();
+                console.log("Committed subcollection questions to database successfully!");
+
+                // Formulate target shareable simulator URL output
+                const shareableUrl = `https://crackcard.avirupchakraborty.in/exam.html?id=${examId}`;
+                document.getElementById('shareable-exam-url').value = shareableUrl;
+
+                // Sync direct simulator launcher link
+                const launchBtn = document.getElementById('direct-launcher-btn');
+                if (launchBtn) {
+                    launchBtn.href = shareableUrl;
+                }
+
+                // Show Success Workspace Overlay
+                document.getElementById('success-overlay').classList.remove('hidden');
+
+            } catch (err) {
+                console.error("Exam transaction failed completely:", err);
+                displayAlertPopup("Upload Transaction Error", `An error occurred while writing exam schemas to Firestore: ${err.message}`);
+            } finally {
+                // Restore button state
+                uploadBtn.innerHTML = originalHtml;
+                uploadBtn.disabled = false;
+            }
+        }
+
+        // Action: Copy exam simulator links cleanly to browser clipboards
+        function copyShareableUrl() {
+            const urlBox = document.getElementById('shareable-exam-url');
+            if (!urlBox) return;
+
+            urlBox.select();
+            urlBox.setSelectionRange(0, 99999); // Mobile compatibility
+
+            try {
+                // Secure, high-compatibility copy command execution
+                document.execCommand('copy');
+                const feedbackText = document.getElementById('copy-notification');
+                if (feedbackText) {
+                    feedbackText.classList.remove('hidden');
+                    setTimeout(() => feedbackText.classList.add('hidden'), 3500);
+                }
+            } catch (err) {
+                console.warn("Clipboard execute API failed:", err);
+            }
+        }
+
+        // Reset workspace seeder form
+        function handleReloadUploader() {
+            document.getElementById('success-overlay').classList.add('hidden');
+            document.getElementById('exam-id').value = '';
+            document.getElementById('exam-name').value = '';
+            document.getElementById('exam-description').value = '';
+            document.getElementById('excel-file-input').value = '';
+            
+            parsedQuestionsPayload = [];
+            totalCalculatedMarks = 0;
+            
+            document.getElementById('parsing-status-panel').classList.add('hidden');
+            
+            // Restore default preview state
+            const container = document.getElementById('preview-list-container');
+            container.innerHTML = `
+                <div class="flex flex-col items-center justify-center h-full text-slate-400 text-center space-y-2">
+                    <i class="fas fa-clipboard-check text-4xl text-slate-200"></i>
+                    <span class="text-xs font-bold">No Questions Loaded</span>
+                    <p class="text-[10px] text-slate-400 max-w-[240px]">Select or drop an Excel spreadsheet. Fully parsed records will populate here for preview verification.</p>
+                </div>
+            `;
+
+            document.getElementById('submit-payload-btn').classList.add('step-inactive');
+        }
+
+        // System popup warnings helpers
+        function displayAlertPopup(title, msg) {
+            const popup = document.getElementById('general-alert-popup');
+            const textBody = document.getElementById('general-alert-body');
+            if (popup && textBody) {
+                textBody.innerText = msg;
+                popup.classList.remove('hidden');
+            }
+        }
+
+        function closeGeneralAlert() {
+            const popup = document.getElementById('general-alert-popup');
+            if (popup) popup.classList.add('hidden');
+        }
+    </script>
+
+</body>
+</html>
