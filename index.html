@@ -788,7 +788,7 @@
             try {
                 const urlObj = new URL(base);
                 // Dynamically resolve relative path to exam.html on the absolute origin host
-                const resolvedUrl = `${urlObj.origin}/exam.html?id=${encodeURIComponent(examId.toLowerCase().trim())}`;
+                const resolvedUrl = `exam.html?id=${encodeURIComponent(examId.toLowerCase().trim())}`;
                 window.location.href = resolvedUrl;
             } catch (err) {
                 console.warn("Dynamic URL parsing failed, falling back to relative navigation:", err);
